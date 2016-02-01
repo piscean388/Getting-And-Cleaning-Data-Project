@@ -4,17 +4,12 @@ The set of variables in the tidy data set are:
 
 subject: an id representing each subject
 activity: one of the following 6 activities 
-		* WALKING
-		*
- WALKING_UPSTAIRS
-
-		* WALKING_DOWNSTAIRS
-		*
- SITTING
-
-		* STANDING
-		*
- LAYING
+* WALKING
+* WALKING_UPSTAIRS
+* WALKING_DOWNSTAIRS
+* SITTING
+* STANDING
+* LAYING
 
 mean: Mean value of the feature/variable for each subject and activity 
 std: Standard deviation of the feature/variable averaged per subject and activity
