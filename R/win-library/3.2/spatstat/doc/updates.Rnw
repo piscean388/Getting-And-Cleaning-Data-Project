@@ -1,0 +1,896 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx}
+\usepackage{Sweave}
+\usepackage{bm}
+\usepackage{anysize}
+
+\marginsize{2cm}{2cm}{2cm}{2cm}
+
+% \VignetteIndexEntry{Summary of Recent Updates to Spatstat}
+
+\newcommand{\pkg}[1]{\texttt{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\R}{{\sf R}}
+\newcommand{\spst}{\pkg{spatstat}}
+\newcommand{\Spst}{\pkg{Spatstat}}
+
+\begin{document}
+\bibliographystyle{plain}
+
+<<echo=FALSE,results=hide>>=
+library(spatstat)
+sversion <- read.dcf(file = system.file("DESCRIPTION", package = "spatstat"),
+         fields = "Version")
+options(useFancyQuotes=FALSE)
+@ 
+
+\title{Summary of recent updates to \spst}
+\author{Adrian Baddeley, Rolf Turner and Ege Rubak}
+\date{For \spst\ version \texttt{\Sexpr{sversion}}}
+\maketitle
+
+\thispagestyle{empty}
+
+This is a summary of changes that have been made 
+to the \spst\ package since the publication of the 
+accompanying book \cite{baddrubaturn15}.
+The book, published in December 2015,
+covers everything in \spst\ up to version \texttt{1.42-0}, 
+released in May 2015.
+
+<<echo=FALSE,results=hide>>=
+z <- read.table("packagesizes.txt", header=TRUE)
+z$date <- as.Date(z$date)
+changes <- z[nrow(z), ] - z[z$version == "1.42-0", ]
+newdat <- changes[["ndatasets"]]
+@ %$
+
+The current version of \spst\ is \texttt{\Sexpr{sversion}}.
+It contains \Sexpr{changes[["nobjects"]]} new functions
+and \Sexpr{newdat} new \Sexpr{ngettext(newdat, "dataset.", "datasets.")}
+This document summarises the most important changes.
+It also lists all important bugs detected since 2010.
+
+<<echo=FALSE,results=hide,fig=FALSE>>=
+options(SweaveHooks=list(fig=function() par(mar=0.2+c(2,4,2,0))))
+Plot <- function(fmla, ..., dat=z) {
+  yvals <- eval(as.expression(fmla[[2]]), envir=dat)
+  plot(fmla, ..., data=dat, type="l", xlab="", lwd=2, ylim=c(0, max(yvals)))
+}
+@ 
+\SweaveOpts{eps=TRUE}
+\setkeys{Gin}{width=0.45\textwidth}
+
+\centerline{
+<<fig=TRUE,echo=FALSE,results=hide>>=
+Plot((Rlines + srclines)/1000 ~ date, ylab="Lines of code (x 1000)", 
+     main="Spatstat growth")
+lines(srclines/1000 ~ date, data=z)
+text(as.Date("2013-01-01"), 9.5, "C code")
+text(as.Date("2013-01-01"), 50, "R code")
+@ 
+}
+
+\tableofcontents
+
+\newpage
+
+\section{Precis of all changes}
+
+Here is the text from the `overview' sections of 
+the News and Release Notes for each update. 
+
+\begin{itemize}
+   \item \spst\ now depends on the package \pkg{nlme}.
+
+   \item More support for replicated point patterns.
+     
+   \item More support for tessellations.
+
+  \item More support for multidimensional point patterns and point processes.
+
+   \item More options for one-sided envelopes.
+
+   \item More support for model comparison.
+
+   \item Convexifying operation.
+
+   \item Subdivide a linear network.
+
+   \item Penttinen process can be simulated (by Metropolis-Hastings or CFTP).
+
+   \item Calculate the predicted variance of number of points.
+
+   \item Accelerated algorithms for linear networks.
+
+   \item Quadrat counting accelerated, in some cases.
+
+   \item Simulation algorithms have been accelerated; simulation outcomes 
+   are \emph{not} identical to those obtained from previous versions of \spst. 
+
+   \item Determinantal point process models.
+
+   \item Random-effects and mixed-effects models for replicated patterns.
+
+   \item Dao-Genton test, and corresponding simulation envelopes.
+
+   \item Simulated annealing and simulated tempering.
+
+   \item spatstat colour tools now handle transparent colours.
+
+   \item Improvements to \verb![! and \texttt{subset} methods
+
+   \item Extensions to kernel smoothing on a linear network.
+
+   \item Support for one-dimensional smoothing kernels.
+
+   \item Mark correlation function may include weights.
+
+   \item Cross-correlation version of the mark correlation function.
+
+   \item Penttinen pairwise interaction model.
+
+   \item Improvements to simulation of Neyman-Scott processes.
+
+   \item Improvements to fitting of Neyman-Scott models.
+
+   \item Extended functionality for pixel images.
+
+   \item Fitted intensity on linear network
+
+   \item Triangulation of windows.
+
+   \item  Corrected an edge correction.
+   \end{itemize}  
+   
+\section{New datasets}  
+
+The following datasets have been added to the package.
+
+\begin{itemize}
+\item \texttt{austates}: The states and large mainland territories of Australia
+   represented as polygonal regions forming a tessellation.
+\end{itemize}
+
+\section{New Functions}
+
+Following is a list of all the functions that have been added.
+
+\begin{itemize}
+   \item \texttt{as.function.tess}:
+   Convert a tessellation to a \texttt{function(x,y)}. The function value
+   indicates which tile of the tessellation contains the point $(x,y)$.
+
+   \item \texttt{tileindex}:
+   Determine which tile of a tessellation contains a given point $(x,y)$.
+
+   \item \texttt{persp.leverage.ppm}:
+   Method for persp plots for objects of class \texttt{leverage.ppm}
+
+   \item \texttt{AIC.mppm}, \texttt{extractAIC.mppm}:
+   AIC for point process models fitted to replicated point patterns.
+
+   \item \texttt{nobs.mppm}, \texttt{terms.mppm}, \texttt{getCall.mppm}:
+   Methods for point process models fitted to replicated point patterns.
+
+  \item \texttt{rPenttinen}:
+    Simulate the Penttinen process using perfect simulation.
+
+  \item \texttt{varcount}:
+    Given a point process model, compute the predicted variance
+    of the number of points falling in a window.
+
+  \item \texttt{inside.boxx}:
+    Test whether multidimensional points lie inside a specified 
+    multidimensional box.
+  \item \texttt{lixellate}:
+    Divide each segment of a linear network into smaller segments.
+
+  \item \texttt{nsegments.linnet}, \texttt{nsegments.lpp}:
+     Count the number of line segments in a linear network.
+
+  \item \texttt{grow.boxx}:
+     Expand a multidimensional box.
+
+   \item \texttt{deviance.ppm}, \texttt{deviance.lppm}:
+     Deviance for a fitted point process model.
+
+   \item \texttt{pseudoR2}:
+     Pseudo-R-squared for a fitted point process model.
+
+   \item \texttt{tiles.empty}
+     Checks whether each tile of a tessellation is empty or nonempty.
+
+   \item \texttt{summary.linim}:
+     Summary for a pixel image on a linear network.
+     
+\item Determinantal Point Process models:
+  \begin{itemize}
+  \item \texttt{dppm}:
+    Fit a determinantal point process model.
+  \item \texttt{fitted.dppm}, \texttt{predict.dppm}, \texttt{intensity.dppm}:
+    prediction for a fitted determinantal point process model.
+  \item 
+    \texttt{Kmodel.dppm}, \texttt{pcfmodel.dppm}: 
+    Second moments of a determinantal point process model.
+  \item
+    \texttt{rdpp}, \texttt{simulate.dppm}:
+    Simulation of a determinantal point process model.
+  \item \texttt{logLik.dppm}, \texttt{AIC.dppm}, \texttt{extractAIC.dppm}, 
+    \texttt{nobs.dppm}: Likelihood and AIC for 
+    a fitted determinantal point process model.
+  \item
+    \texttt{print.dppm}, \texttt{reach.dppm}, \texttt{valid.dppm}: 
+    Basic information about a \texttt{dpp} model.
+  \item \texttt{coef.dppm}, \texttt{formula.dppm}, \texttt{print.dppm}, 
+    \texttt{terms.dppm}, \texttt{labels.dppm},
+    \texttt{model.frame.dppm}, \texttt{model.matrix.dppm}, 
+    \texttt{model.images.dppm},  \texttt{is.stationary.dppm}, 
+    \texttt{reach.dppm}, \texttt{unitname.dppm}, \verb!unitname<-.dppm!, 
+    \texttt{Window.dppm}: Various methods for \texttt{dppm} objects.
+  \item \texttt{parameters.dppm}: Extract meaningful list of model parameters.
+  \item \texttt{objsurf.dppm}: Objective function surface of 
+    a \texttt{dppm} object. 
+  \item \texttt{residuals.dppm}: Residual measure for a \texttt{dppm} object.
+  \end{itemize}
+\item Determinantal Point Process model families:
+  \begin{itemize}
+  \item \texttt{dppBessel}, \texttt{dppCauchy}, 
+    \texttt{dppGauss}, \texttt{dppMatern}, \texttt{dppPowerExp}:
+    Determinantal Point Process family functions.
+  \item \texttt{detpointprocfamilyfun}:
+    Create a family function.
+  \item    
+    \texttt{update.detpointprocfamily}: Set parameter values in a
+    determinantal point process model family.
+  \item
+    \texttt{simulate.dppm}:   Simulation.
+  \item \texttt{is.stationary.detpointprocfamily}, 
+   \texttt{intensity.detpointprocfamily}, \texttt{Kmodel.detpointprocfamily}, 
+   \texttt{pcfmodel.detpointprocfamily}: Moments.
+ \item \texttt{dim.detpointprocfamily}, \texttt{dppapproxkernel}, 
+   \texttt{dppapproxpcf}, \texttt{dppeigen}, 
+   \texttt{dppkernel}, \texttt{dppparbounds}, \texttt{dppspecdenrange}, 
+   \texttt{dppspecden}:
+   Helper functions.
+ \end{itemize}
+
+ \item \texttt{dg.envelope}:
+   Simulation envelopes corresponding to Dao-Genton test.
+
+ \item \texttt{dg.progress}:
+   Progress plot (envelope representation) for the Dao-Genton test.
+
+ \item \texttt{dg.sigtrace}: significance trace for the Dao-Genton test.
+
+ \item \texttt{markcrosscorr}:
+   Mark cross-correlation function for point patterns with
+   several columns of marks.
+
+ \item \texttt{rtemper}:
+   Simulated annealing or simulated tempering.
+
+ \item \texttt{rgb2hsva}:
+   Convert RGB to HSV data, like \texttt{rgb2hsv}, but preserving transparency.
+
+ \item \texttt{superimpose.ppplist}, \texttt{superimpose.splitppp}:
+   New methods for 'superimpose' for lists of point patterns.
+
+ \item \texttt{dkernel}, \texttt{pkernel}, \texttt{qkernel}, \texttt{rkernel}:
+   Probability density, cumulative probability, quantiles
+   and random generation from distributions used in basic one-dimensional
+   kernel smoothing.
+
+ \item \texttt{kernel.factor}:
+   Auxiliary calculations for one-dimensional kernel smoothing.
+
+ \item \texttt{spatdim}:
+   Spatial dimension of any object in the \spst\ package.
+
+ \item \texttt{as.boxx}:
+   Convert data to a multi-dimensional box.
+
+ \item \texttt{intensity.ppx}:
+   Method for \texttt{intensity} for multi-dimensional
+   space-time point patterns.
+
+ \item \texttt{fourierbasis}:
+   Evaluate Fourier basis functions in any number of dimensions.
+
+ \item \texttt{valid}:
+   New generic function, with methods 
+   \texttt{valid.ppm}, \texttt{valid.lppm}, \texttt{valid.dppm}.
+   
+ \item \texttt{emend}, \texttt{emend.ppm}, \texttt{emend.lppm}:
+   New generic function with methods for \texttt{ppm} and \texttt{lppm}.
+   \texttt{emend.ppm} is equivalent to \texttt{project.ppm}.
+
+ \item \texttt{Penttinen}:
+   New pairwise interaction model.
+
+  \item \texttt{quantile.density}:
+   Calculates quantiles from kernel density estimates.
+
+  \item \texttt{CDF.density}:
+   Calculates cumulative distribution function from kernel density estimates.
+
+\item \texttt{triangulate.owin}: decompose a spatial window into triangles.
+\item \texttt{fitted.lppm}: fitted intensity values for a point process
+  on a linear network.
+  
+   \item \texttt{parameters}:
+   Extract all parameters from a fitted model.
+
+ \end{itemize}
+ 
+ 
+\section{Alphabetical list of changes}
+
+Here is a list of all changes made to existing functions,
+listed alphabetically.
+
+\begin{itemize}
+\item \texttt{affine.owin}:
+  Allows transformation matrix to be singular, if the window is polygonal.
+
+\item \texttt{anova.mppm}: Now handles Gibbs models,
+  and performs the adjusted composite likelihood ratio test.
+  
+\item \texttt{as.im.function}:
+  New argument \texttt{strict}.
+
+\item \texttt{as.polygonal}:
+  Can now repair errors in polygon data, if \texttt{repair=TRUE}.
+
+ \item \texttt{bw.ppl}:
+   New argument \texttt{weights}.
+
+ \item \texttt{clusterset}:
+   Improved behaviour.
+
+ \item \texttt{clusterfit}:
+   New argument \texttt{algorithm} specifies the choice 
+   of optimisation algorithm.
+
+\item \texttt{collapse.fv}:
+   This is now treated as a method for the \texttt{nlme} 
+   generic \texttt{collapse}.
+   Its syntax has been adjusted slightly.
+
+ \item \texttt{contour.im}:
+   New argument \texttt{col} specifies the colour of the contour lines.
+   If \texttt{col} is a colour map, then the contours are drawn 
+   in different colours.
+
+ \item \texttt{dclf.test, mad.test, dclf.progress, mad.progress,} 
+   \texttt{dclf.sigtrace, mad.sigtrace}, 
+   \texttt{dg.progress, dg.sigtrace}:
+   \begin{itemize}
+   \item 
+     New argument \texttt{clamp} determines the test statistic 
+     for one-sided tests.
+   \item 
+     New argument \texttt{rmin} determines the left endpoint
+     of the test interval.    
+   \item 
+     New argument \texttt{leaveout} specifies how to calculate
+     discrepancy between observed and simulated function values.
+   \item
+     New argument \texttt{scale} allows summary function values to be rescaled
+     before the comparison is performed.
+   \item
+     New argument \texttt{interpolate} supports interpolation of $p$-value.
+   \item
+     New argument \texttt{interpolate} supports interpolation of 
+     critical value of test.
+   \end{itemize}
+ 
+
+ \item \texttt{default.rmhcontrol, default.rmhexpand}:
+   New argument \texttt{w}.
+
+ \item \texttt{density.lpp}:
+   \begin{itemize}
+   \item 
+     New argument \texttt{kernel} specifies the smoothing kernel.
+     Any of the standard one-dimensional smoothing kernels can be used.
+   \item 
+     Now supports both the `equal-split continuous' and 
+     `equal-split discontinuous' smoothers. New argument \texttt{continuous} 
+     determines the choice of smoother.
+   \end{itemize}
+   
+ \item \texttt{diagnose.ppm, plot.diagppm}:
+   New arguments \texttt{col.neg, col.smooth} control the colour maps.
+
+ \item \texttt{envelope}:
+   \begin{itemize}
+   \item 
+     New argument \texttt{clamp} gives greater control
+     over one-sided envelopes.
+   \item  New argument \texttt{funargs}
+   \item 
+     New argument \texttt{scale} allows global envelopes to have 
+     width proportional to a specified function of $r$,
+     rather than constant width.
+   \end{itemize}
+     
+ \item \texttt{Kest.fft}:
+   Now has \verb!...! arguments allowing control of spatial resolution.
+
+ \item \texttt{kppm}:
+   \begin{itemize}
+   \item 
+     Fitting a model with \texttt{clusters="LGCP"} no longer requires the
+     package \pkg{RandomFields} to be loaded explicitly.
+   \item
+     New argument \texttt{algorithm} specifies the choice 
+     of optimisation algorithm.
+   \end{itemize}
+     
+ \item \texttt{kppm}:
+   Left hand side of formula can now involve entries in the list \texttt{data}.
+
+ \item \texttt{Hest}:
+   Argument \texttt{X} can now be a pixel image with logical values.
+   New argument \texttt{W}. [Based on code by Kassel Hingee.]
+   
+ \item \texttt{logLik.ppm}:
+   New argument \texttt{absolute}.
+
+ \item \texttt{logLik.mppm}: new argument \texttt{warn}.
+   
+ \item \texttt{lppm}:
+   Computation accelerated.
+
+ \item \texttt{markcorr}:
+   New argument \texttt{weights} allows computation of the weighted version
+   of the mark correlation function.
+
+ \item \texttt{mppm}:
+   Now handles models with a random effect component.
+   New argument \texttt{random} is a formula specifying the random effect.
+
+ \item \texttt{nndist.lpp, nnwhich.lpp, nncross.lpp, distfun.lpp}:
+   New argument \texttt{k} allows computation of $k$-th nearest point.
+   Computation accelerated.
+
+ \item \texttt{padimage}:
+   New argument \texttt{W} allows an image to be padded out to fill any window.
+
+ \item \texttt{plot.kppm}:
+   New arguments \texttt{pause} and \texttt{xname}.
+
+   \item \texttt{plot.mppm}
+   New argument \texttt{se}.
+   
+   \item \texttt{plot.ppp}
+   The default colour for the points is now a transparent grey,
+   if this is supported by the plot device.
+
+   \item \texttt{ppm.ppp, ppm.quad}
+   New argument \texttt{emend}, equivalent to \texttt{project}.
+
+  \item \texttt{predict.kppm, residuals.kppm}
+   Now issues a warning when the calculation ignores the 
+   cluster/Cox component and treats the model as if it were Poisson.
+   (This currently happens in predict.kppm when se=TRUE or interval != "none",
+   and in residuals.kppm when type != "raw").
+
+   \item \texttt{progressreport}
+   New argument \texttt{state}
+   New option: \verb!style="tk"!
+
+ \item \texttt{quadratcount.ppp}:
+   Computation accelerated in some cases.
+
+   \item \texttt{rgbim, hsvim}
+   New argument \texttt{A} controls the alpha (transparency) channel.
+
+   \item \texttt{rgb2hex, col2hex, paletteindex, is.colour, samecolour,}
+   \texttt{complementarycolour, is.grey, to.grey}
+   These colour tools now handle transparent colours.
+
+   \item \texttt{rgb2hex}
+   New argument \texttt{maxColorValue}
+
+   \item \texttt{rLGCP}
+   This function no longer requires the package \pkg{RandomFields}
+   to be loaded explicitly. 
+
+  \item \texttt{rMaternI, rMaternII}:
+    These functions can now generate random patterns in 
+    three dimensions and higher dimensions, when the argument
+    \texttt{win} is of class \texttt{box3} or \texttt{boxx}.
+
+  \item \texttt{rmh.ppm, rmhmodel.ppm, simulate.ppm}:
+   A model fitted using the \texttt{Penttinen} interaction can now be simulated.
+
+ \item \texttt{rmh.default, rmhmodel.default}:
+   These functions now recognise \verb!cif='penttinen'!
+   for the Penttinen interaction.
+   \item \texttt{rose.default}
+   New argument \texttt{weights}.
+
+   \item \texttt{rose}
+   New arguments \texttt{start} and \texttt{clockwise} specify the convention
+   for measuring and plotting angles.
+
+
+ \item \texttt{rotmean}:
+   New argument \texttt{padzero}. 
+   Default behaviour has changed.
+
+   \item \texttt{rpoispp}
+   Accelerated, when \texttt{lambda} is a pixel image.
+
+ \item \texttt{rStrauss, rHardcore, rStraussHard, rDiggleGratton, rDGS, rPenttinen:}
+   New argument \texttt{drop}.
+
+   \item \texttt{rthin}
+   Accelerated, when \texttt{P} is a single number.
+
+   \item \texttt{rThomas, rMatClust, rCauchy, rVarGamma}
+   When the model is approximately Poisson, it is simulated using rpoispp. 
+   This avoids computations which would require huge amounts of memory. 
+   New argument \texttt{poisthresh} controls this behaviour.
+
+
+      \item Simulation:
+   Several basic simulation algorithms have been accelerated.
+   Consequently, simulation outcomes are not identical to 
+   those obtained with previous versions of \spst, even when the
+   same random seed is used. To ensure compatibility with previous
+   versions of spatstat, revert to the slower code by setting
+   \texttt{spatstat.options(fastthin=FALSE, fastpois=FALSE)}.
+
+   \item \texttt{simulate.ppm}
+   New argument \texttt{w} controls the window of the simulated patterns.
+
+   \item \texttt{spatstat.options}
+   New options \texttt{fastthin} and \texttt{fastpois} 
+   enable fast simulation algorithms.
+   Set these options to \texttt{FALSE} to reproduce results obtained with
+   previous versions of \spst.
+
+   \item \texttt{split.ppp}
+   The splitting variable \texttt{f} can now be a logical vector.
+
+   \item \texttt{step}: now works for models of class \texttt{"mppm"}.
+
+   \item \texttt{tess}:
+   Argument \texttt{window} is ignored when xgrid, ygrid are given.
+
+   \item \texttt{textureplot}: 
+     Argument \texttt{x} can now be something acceptable to \texttt{as.im}.
+     
+   \item \texttt{to.grey}
+   New argument \texttt{transparent}.
+
+  \item \texttt{union.owin}:
+   Improved behaviour when there are more than 2 windows.
+
+   \item \texttt{update}: now works for models of class \texttt{"mppm"}.
+     
+   \item \texttt{update.kppm}:
+   Now handles additional arguments in any order, with or without names.
+   Changed arguments. Improved behaviour.
+
+   \item \texttt{valid.ppm}
+   This is now a method for the generic function \texttt{valid}.
+
+   \item \texttt{vcov.mppm}:
+   Now handles models with Gibbs interactions.
+
+ \item \verb![<-.im!
+  Accepts an array for \texttt{value}.
+
+\item \verb![.ppx!:
+  The subset index \texttt{i} may now be a spatial domain
+  of class \texttt{boxx} or \texttt{box3}.
+
+   \item \verb![.ppp!
+   New argument \texttt{clip} determines whether the window is clipped.
+
+   \item \verb![.ppp!
+   The previously-unused argument \texttt{drop} now determines whether 
+   to remove unused levels of a factor.
+
+   \item \verb![.pp3!, \verb![.lpp!, \verb![.ppx!, 
+     \texttt{subset.ppp, subset.pp3, subset.lpp, subset.ppx}:
+   These methods now have an argument \texttt{drop} which determines
+   whether to remove unused levels of a factor.
+
+ \end{itemize}
+ 
+\section{Serious Bugs Fixed}
+
+<<echo=FALSE,results=hide>>=
+nbugs <- nrow(news(grepl("^BUG", Category), 
+                   package="spatstat"))
+nbugssince <- nrow(news(Version > "1.42-0" & grepl("^BUG", Category), 
+                   package="spatstat"))
+@ 
+
+Hundreds of bugs have been detected and fixed in \spst.
+Bugs that may have affected the user are listed in the 
+package \texttt{NEWS} file. To read all these bug reports, type
+<<eval=FALSE>>=
+news(grepl("^BUG", Category), package="spatstat")
+@ 
+which currently produces a list of \Sexpr{nbugs} bugs,
+of which \Sexpr{nbugssince} were detected after publication of the
+book \cite{baddrubaturn15}.
+
+Following is a list of the {\bf most serious bugs} only, in order
+of potential impact.
+
+\newcommand\bugger[4]{%
+  \\  {} %
+  {\small (Bug introduced in \texttt{spatstat {#1}}, {#2}; %
+    fixed in \texttt{spatstat {#3}}, {#4})}%
+}
+  
+\begin{itemize}
+\item \texttt{nncross.ppp}:
+
+  Results were completely incorrect if $k > 1$.
+  \bugger{1.31-2}{april 2013}{1.35-0}{december 2013}
+
+\item \texttt{nncross.pp3}:
+  Results were completely incorrect in some cases.
+  \bugger{1.32-0}{august 2013}{1.34-0}{october 2013}
+
+\item \texttt{rmh}:
+  
+   \begin{itemize}
+   \item Simulation was completely incorrect in the case of 
+     a multitype point process with an interaction that does not depend
+     on the marks, such as \verb!ppm(betacells, ~marks, Strauss(60))!
+     due to a coding error in the \texttt{C} interface.
+     \bugger{1.22-3}{march 2010}{1.22-3}{june 2011}
+   \item 
+     Simulation of the Area-Interaction model was completely incorrect.
+     \bugger{1.23-6}{october 2011}{1.31-0}{january 2013}
+   \item 
+     Simulation of the Geyer saturation process was completely incorrect.
+     \bugger{1.31-0}{january 2013}{1.31-1}{march 2013}
+   \item 
+     Simulation of the Strauss-Hard Core process was partially incorrect,
+     giving point patterns with a slightly lower intensity.
+     \bugger{1.31-0}{january 2013}{1.37-0}{may 2014}
+   \item
+   The result of simulating a model with a hard core
+   did not necessarily respect the hard core constraint,
+   and simulation of a model with strong inhibition
+   did not necessarily converge. 
+   This only happened if the first order trend was large,
+   the starting state (\texttt{n.start} or \texttt{x.start}) was not given,
+   and the number of iterations \texttt{nrep} was not very large.
+   It occurred because of a poor choice for the default starting state.
+   {\small (Bug was present since about 2010.  
+     Fixed in \texttt{spatstat 1.40-0}, december 2014)}
+   \item 
+     Simulation was incorrect in the case of an inhomogeneous multitype model
+     with \texttt{fixall=TRUE} (i.e.\ with a fixed number of points 
+     of each type) if the model was segregated (i.e.\ if different types
+     of points had different first order trend). 
+     The effect of the error was that all types of points
+     had the same first order trend.
+     {\small (Bug was present since about 2010.
+       Fixed in \texttt{spatstat 1.43-0}, september 2015)}
+  \item 
+     Simulation of the Geyer saturation process was 
+     incorrectly initialised, so that the results of a short run 
+     (i.e. small value of \texttt{nrep}) were incorrect, 
+     while long runs were correct.
+     \bugger{1.17-0}{october 2009}{1.31-1}{march 2013}
+   \end{itemize}
+   
+\item \texttt{nncross}, \texttt{distfun}, \texttt{AreaInter}:
+  Results of \texttt{nncross} were possibly incorrect 
+  when \code{X} and \code{Y} did not have the same window. 
+  This bug affected values of \texttt{distfun} and may also 
+  have affected ppm objects with interaction \texttt{AreaInter}.
+  \bugger{1.9-4}{june 2006}{1.25-2}{january 2012}
+
+ \item \texttt{update.ppm}:
+   If the argument \texttt{Q} was given,
+   the results were usually incorrect, or an error was generated.
+   \bugger{1.38-0}{august 2014}{1.38-1}{august 2014}
+     
+\item \texttt{envelope.ppm}:
+   If the model was an inhomogeneous Poisson process, 
+   the resulting envelope object was incorrect
+   (the simulations were correct, but the envelopes were calculated
+   assuming the model was CSR). 
+   \bugger{1.23-5}{september 2011}{1.23-6}{october 2011}
+
+ \item \texttt{leverage.ppm}, \texttt{influence.ppm}, \texttt{dfbetas.ppm}:
+   Results were incorrect for non-Poisson processes.  
+   \bugger{1.25-0}{december 2011}{1.34-0}{october 2013}
+   
+\item \texttt{rVarGamma}:
+   Simulations were incorrect; they were generated using the wrong value
+   of the parameter \texttt{nu.ker}.  
+   \bugger{1.25-0}{december 2011}{1.35-0}{december 2013}
+
+ \item \texttt{rCauchy}:
+   Simulations were incorrect; they were generated using the wrong value
+   of the parameter \texttt{omega}.
+   \bugger{1.25-0}{december 2011}{1.25-2}{january 2012}
+
+ \item \texttt{kppm}, \texttt{matclust.estpcf}, \texttt{pcfmodel}:
+    The pair correlation function of the M\'atern Cluster Process
+    was evaluated incorrectly at distances close to 0.
+    This could have affected the fitted parameters 
+    in \texttt{matclust.estpcf()} or \texttt{kppm(clusters="MatClust")}.
+    \bugger{1.20-2}{august 2010}{1.33-0}{september 2013}
+    
+ \item \texttt{ppm}:
+   Results were incorrect for the Geyer saturation model
+   with a non-integer value of the saturation parameter \texttt{sat}.
+   \bugger{1.20-0}{july 2010}{1.31-2}{april 2013}
+   
+ \item \texttt{lppm}:
+   For multitype patterns, the fitted model was completely incorrect
+   due to an error in constructing the quadrature scheme.
+   \bugger{1.23-0}{july 2011}{1.30-0}{december 2012}
+   
+ \item \texttt{Geyer}:
+   For point process models with the \texttt{Geyer} interaction, 
+   \texttt{vcov.ppm} and \texttt{suffstat} sometimes gave incorrect answers.
+   \bugger{1.27-0}{may 2012}{1.30-0}{december 2012}
+   
+ \item \texttt{vcov.ppm}, \texttt{suffstat}:
+   These functions sometimes gave incorrect values 
+   for marked point process models.   
+   \bugger{1.27-0}{may 2012}{1.29-0}{october 2012}
+   
+ \item \texttt{linearK}, \texttt{linearKinhom}:
+   If any data points were located exactly at a vertex of the 
+   linear network, the weights for Ang's correction were incorrect, 
+   due to numerical error. This sometimes produced infinite 
+   or NA values of the linear $K$ function.  
+   \bugger{1.23-0}{july 2011}{1.27-0}{may 2012}
+
+ \item \texttt{Kinhom}, \texttt{Linhom}:
+   the results were not renormalised (even if \texttt{renormalise=TRUE})
+   in some cases.
+   \bugger{1.21-0}{december 2010}{1.37-0}{may 2014}
+     
+ \item \texttt{Kinhom}, \texttt{Linhom}:
+   Ignored argument \texttt{reciplambda2} in some cases.
+   \bugger{1.39-0}{october 2014}{1.40-0}{december 2014}
+
+  \item \texttt{markcorrint}:
+   Results were completely incorrect.
+   \bugger{1.39-0}{october 2014}{1.40-0}{december 2014}
+
+ \item \texttt{Kinhom}, \texttt{Linhom}:
+   Calculations were incorrect if \texttt{lambda} was a fitted point
+   process model.
+   \bugger{1.38-0}{august 2014}{1.38-1}{august 2014}
+     
+ \item \texttt{predict.ppm}:
+   Calculation of the conditional intensity omitted the edge correction
+   if \texttt{correction='translate'} or \texttt{correction='periodic'}. 
+   \bugger{1.17-0}{october 2009}{1.31-3}{may 2013}
+
+ \item \texttt{varblock}:
+   Calculations were incorrect if more than one column of 
+   edge corrections was computed. 
+   \bugger{1.21-1}{november 2010}{1.39-0}{october 2014}
+   
+ \item \texttt{scan.test}
+   Results were sometimes incorrect due to numerical instability
+   (a 'Gibbs phenomenon').    
+   \bugger{1.24-1}{october 2011}{1.26-1}{april 2012}
+
+ \item \texttt{relrisk}:
+   When \verb!at="pixels"!, a small fraction of pixel values were sometimes
+   wildly inaccurate, due to numerical errors. This affected the 
+   range of values in the result, and therefore the appearance of plots.
+   {\small (Bug fixed in \texttt{spatstat 1.40-0}, december 2014)}
+
+ \item \texttt{selfcrossing.psp}:
+   $y$ coordinate values were incorrect.   
+   \bugger{1.23-2}{august 2011}{1.25-3}{february 2012}
+     
+ \item \texttt{predict.slrm}:
+   Results of \texttt{predict(object, newdata)} were incorrect 
+   if the spatial domain of \texttt{newdata}
+   was larger than the original domain.
+   \bugger{1.21-0}{november 2010}{1.25-3}{february 2012}
+   
+ \item \texttt{Lest}:
+   The variance approximations (Lotwick-Silverman and Ripley)
+   obtained with \texttt{var.approx=TRUE} were incorrect for \texttt{Lest}
+   (although they were correct for \texttt{Kest}) due to a coding error.
+   \bugger{1.24-1}{october 2011}{1.24-2}{november 2011}
+ 
+ \item \texttt{bw.diggle}:
+   Bandwidth was too large by a factor of 2.
+   \bugger{1.23-4}{september 2011}{1.23-5}{september 2011}
+ 
+ \item pair correlation functions (\texttt{pcf.ppp}, \texttt{pcfdot}, 
+    \texttt{pcfcross} etc:)
+    The result had a negative bias at the maximum $r$ value,
+    because contributions to the pcf estimate from interpoint distances
+    greater than \texttt{max(r)} were mistakenly omitted. 
+    {\small (Bugs fixed in \texttt{spatstat 1.35-0}, december 2013)}
+    
+ \item \texttt{Kest}, \texttt{Lest}:
+   Gave incorrect values in very large datasets, due to numerical overflow.
+   `Very large' typically means about 1 million points in a random pattern, 
+   or 100,000 points in a tightly clustered pattern.
+   [Overflow cannot occur unless there are at least 46,341 points.]
+   
+ \item \texttt{bw.relrisk}:
+    Implementation of \texttt{method="weightedleastsquares"} was incorrect
+    and was equivalent to \texttt{method="leastsquares"}.
+    \bugger{1.21-0}{november 2010}{1.23-4}{september 2011}
+    
+\item \texttt{triangulate.owin}:
+   Results were incorrect in some special cases.
+   \bugger{1.42-2}{june 2015}{1.44-0}{december 2015}
+  
+\item \texttt{crosspairs}:
+   If \texttt{X} and \texttt{Y} were identical point patterns,
+   the result was not necessarily symmetric
+   (on some machines) due to numerical artifacts.
+   \bugger{1.35-0}{december 2013}{1.44-0}{december 2015}
+
+ \item \texttt{bdist.tiles}:
+   Values were incorrect in some cases due to numerical error.
+    {\small (Bug fixed in \texttt{spatstat 1.29-0}, october 2012)}
+   
+\item \texttt{Kest.fft}:
+  Result was incorrectly normalised.
+   \bugger{1.21-2}{january 2011}{1.44-0}{december 2015}
+  
+\item \texttt{crossdist.ppp}:
+  Ignored argument \texttt{squared} if \texttt{periodic=FALSE}.
+    {\small (Bug fixed in \texttt{spatstat 1.38-0}, july 2014)}
+
+\item polygon geometry:
+    The point-in-polygon test gave the wrong answer in some boundary cases.
+    {\small (Bug fixed in \texttt{spatstat 1.23-2}, august 2011)}
+
+\item \texttt{MultiStraussHard}:
+    If a fitted model with \texttt{MultiStraussHard} interaction was invalid,
+    \texttt{project.ppm} sometimes yielded a model that was still invalid.
+    {\small (Bug fixed in \texttt{spatstat 1.42-0}, may 2015)}
+    
+\item \texttt{pool.envelope}:  
+  Did not always respect the value of \texttt{use.theory}.
+    \bugger{1.23-5}{september 2011}{1.43-0}{september 2015}
+
+\item \texttt{nncross.lpp}, \texttt{nnwhich.lpp}, \texttt{distfun.lpp}:
+  Sometimes caused a segmentation fault.
+    \bugger{1.44-0}{december 2015}{1.44-1}{december 2015}
+
+\item \texttt{anova.ppm}:
+  If a single \texttt{object} was given, and it was a Gibbs model,
+  then \texttt{adjust} was effectively set to \texttt{FALSE}.
+  \bugger{1.39-0}{october 2014}{1.44-1}{december 2015}
+
+\end{itemize}
+
+
+\begin{thebibliography}{1}
+\bibitem{badd10wshop}
+A.~Baddeley.
+\newblock Analysing spatial point patterns in {{R}}.
+\newblock Technical report, CSIRO, 2010.
+\newblock Version 4.
+\newblock URL \texttt{https://research.csiro.au/software/r-workshop-notes/}
+
+\bibitem{baddrubaturn15}
+A. Baddeley, E. Rubak, and R. Turner.
+\newblock {\em Spatial Point Patterns: Methodology and Applications with {{R}}}.
+\newblock Chapman \& Hall/CRC Press, 2015.
+
+\end{thebibliography}
+ 
+\end{document}
