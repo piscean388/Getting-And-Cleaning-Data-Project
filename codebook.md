@@ -12,7 +12,9 @@ activity: one of the following 6 activities
 * LAYING
 
 mean: Mean value of the feature/variable for each subject and activity 
+
 std: Standard deviation of the feature/variable averaged per subject and activity
+
 meanFreq: Weighted average of the frequency components for each subject and activity
 
 The full list of variables is below :
